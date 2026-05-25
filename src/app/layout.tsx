@@ -2,14 +2,14 @@ import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ThemeProvider } from "@/components/ThemeProvider";
-import Navbar from "@/components/Navbar";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 const geist = Geist({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "DocVault — Secure File Storage",
-  description: "Store and manage your documents securely in the cloud",
+  description: "Securely store and manage your documents in the cloud",
 };
 
 export default function RootLayout({
@@ -18,9 +18,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={geist.className}>
-        <ClerkProvider>
+    <ClerkProvider>
+      <html lang="en" suppressHydrationWarning>
+        <body className={geist.className}>
           <ThemeProvider
             attribute="class"
             defaultTheme="system"
@@ -28,9 +28,10 @@ export default function RootLayout({
             disableTransitionOnChange
           >
             <main>{children}</main>
+            <Toaster position="bottom-right" richColors closeButton />
           </ThemeProvider>
-        </ClerkProvider>
-      </body>
-    </html>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }
