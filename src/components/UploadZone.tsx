@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 import {
   Cloud,
   FileText,
@@ -120,7 +121,6 @@ export default function UploadZone({ onUploadComplete }: UploadZoneProps) {
       const { file } = files[i];
       const filePath = `${user.id}/${Date.now()}_${file.name}`;
 
-      // Update status to uploading
       setFiles((prev) =>
         prev.map((f, idx) =>
           idx === i ? { ...f, status: "uploading", progress: 10 } : f,
@@ -128,19 +128,16 @@ export default function UploadZone({ onUploadComplete }: UploadZoneProps) {
       );
 
       try {
-        // Upload to Supabase Storage
         const { error: storageError } = await supabase.storage
           .from("documents")
           .upload(filePath, file, { upsert: false });
 
         if (storageError) throw storageError;
 
-        // Progress to 70%
         setFiles((prev) =>
           prev.map((f, idx) => (idx === i ? { ...f, progress: 70 } : f)),
         );
 
-        // Save metadata to DB
         const { error: dbError } = await supabase.from("documents").insert({
           user_id: user.id,
           file_name: file.name,
@@ -149,14 +146,18 @@ export default function UploadZone({ onUploadComplete }: UploadZoneProps) {
           storage_path: filePath,
         });
 
-        if (dbError) throw dbError;
+        if (dbError) throw new Error(dbError.message);
 
-        // Done
         setFiles((prev) =>
           prev.map((f, idx) =>
             idx === i ? { ...f, status: "done", progress: 100 } : f,
           ),
         );
+
+        // ✅ Success toast
+        toast.success("File uploaded!", {
+          description: `${file.name} has been uploaded successfully.`,
+        });
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : "Upload failed";
         setFiles((prev) =>
@@ -166,6 +167,11 @@ export default function UploadZone({ onUploadComplete }: UploadZoneProps) {
               : f,
           ),
         );
+
+        // ❌ Error toast
+        toast.error("Upload failed!", {
+          description: `${file.name} could not be uploaded.`,
+        });
       }
     }
 
