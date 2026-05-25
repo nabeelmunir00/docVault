@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Files, Database, Upload, Link2, Sun, Moon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import RecentUploadsTable from "@/components/RecentUploadsTable";
 
 const stats = [
   {
@@ -86,16 +87,8 @@ export default async function DashboardPage() {
         <CardHeader className="px-6 py-4 border-b border-border/60">
           <CardTitle className="text-sm font-medium">Recent Files</CardTitle>
         </CardHeader>
-        <CardContent className="p-6">
-          <div className="flex flex-col items-center justify-center py-12 gap-3 text-center">
-            <div className="w-12 h-12 bg-muted rounded-xl flex items-center justify-center">
-              <Files className="w-5 h-5 text-muted-foreground" />
-            </div>
-            <p className="text-sm font-medium text-foreground">No files yet</p>
-            <p className="text-xs text-muted-foreground">
-              Upload your first file to get started
-            </p>
-          </div>
+        <CardContent className="p-0">
+          <RecentUploadsTable limit={5} showHeader={true} autoRefresh={false} />
         </CardContent>
       </Card>
     </div>
