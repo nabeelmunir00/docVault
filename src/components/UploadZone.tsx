@@ -215,9 +215,7 @@ export default function UploadZone({ onUploadComplete }: UploadZoneProps) {
             />
           </div>
           {isDragActive ? (
-            <p className="text-sm font-medium text-violet-600">
-              Drop karo files yahan!
-            </p>
+            <p className="text-sm font-medium text-violet-600">Drop Here!</p>
           ) : (
             <>
               <div>
