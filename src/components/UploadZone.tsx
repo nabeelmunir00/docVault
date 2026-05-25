@@ -19,6 +19,7 @@ import {
   XCircle,
   X,
   UploadCloud,
+  Video,
 } from "lucide-react";
 
 // File types
@@ -55,6 +56,23 @@ const FILE_ICONS: Record<
     icon: FileSpreadsheet,
     color: "text-green-500",
     bg: "bg-green-50 dark:bg-green-950",
+  },
+  "video/mp4": {
+    icon: Video,
+    color: "text-purple-500",
+    bg: "bg-purple-50 dark:bg-purple-950",
+  },
+
+  "video/webm": {
+    icon: Video,
+    color: "text-purple-500",
+    bg: "bg-purple-50 dark:bg-purple-950",
+  },
+
+  "video/quicktime": {
+    icon: Video,
+    color: "text-purple-500",
+    bg: "bg-purple-50 dark:bg-purple-950",
   },
 };
 
