@@ -31,9 +31,10 @@ export default function Navbar() {
               variant="ghost"
               size="icon"
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              className="p-2 rounded-full"
             >
-              <Sun className="size-6 dark:hidden" />
-              <Moon className="size-6 hidden dark:block" />
+              <Sun className="size-5 dark:hidden" />
+              <Moon className="size-5 hidden dark:block" />
             </Button>
 
             {/* Auth UI */}
