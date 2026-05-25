@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -22,6 +22,8 @@ import {
   User,
   Cloud,
 } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import { useUser } from "@clerk/nextjs";
 
 const navItems = [
   {
@@ -45,6 +47,57 @@ const navItems = [
 export default function MobileSidebar() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  const [usedBytes, setUsedBytes] = useState(0);
+  const [loadingStorage, setLoadingStorage] = useState(true);
+  const { user } = useUser();
+
+  // Fetch real storage
+  useEffect(() => {
+    const fetchStorage = async () => {
+      if (!user) return;
+      setLoadingStorage(true);
+
+      const { data } = await supabase
+        .from("documents")
+        .select("file_size")
+        .eq("user_id", user.id);
+
+      if (data) {
+        const total = data.reduce((acc, doc) => acc + (doc.file_size || 0), 0);
+        setUsedBytes(total);
+      }
+      setLoadingStorage(false);
+    };
+
+    fetchStorage();
+  }, [user, pathname]);
+  const TOTAL_STORAGE = 5 * 1024 * 1024 * 1024; // 5GB in bytes
+
+  const formatSize = (bytes: number) => {
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+    if (bytes < 1024 * 1024 * 1024)
+      return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+    return (bytes / (1024 * 1024 * 1024)).toFixed(2) + " GB";
+  };
+
+  const usedPercent = Math.min(
+    Math.round((usedBytes / TOTAL_STORAGE) * 100),
+    100,
+  );
+
+  const storageColor =
+    usedPercent >= 90
+      ? "text-red-500"
+      : usedPercent >= 70
+        ? "text-amber-500"
+        : "text-violet-500";
+
+  const progressColor =
+    usedPercent >= 90
+      ? "[&>div]:bg-red-500"
+      : usedPercent >= 70
+        ? "[&>div]:bg-amber-500"
+        : "";
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -101,17 +154,27 @@ export default function MobileSidebar() {
         </div>
 
         {/* Storage */}
-        <div className="p-3 border-t border-border/60">
-          <div className="bg-muted/40 rounded-xl p-3">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-medium">Storage</span>
-              <span className="text-[10px] text-muted-foreground">62%</span>
+        <div className="bg-muted/40 rounded-xl p-3">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Cloud className={cn("w-3.5 h-3.5", storageColor)} />
+              <span className="text-xs font-medium text-foreground">
+                Storage
+              </span>
             </div>
-            <Progress value={62} className="h-1.5 mb-2" />
-            <p className="text-[11px] text-muted-foreground">
-              3.1 GB of 5 GB used
-            </p>
+            <span className={cn("text-[10px] font-medium", storageColor)}>
+              {loadingStorage ? "..." : `${usedPercent}%`}
+            </span>
           </div>
+          <Progress
+            value={loadingStorage ? 0 : usedPercent}
+            className={cn("h-1.5 mb-2", progressColor)}
+          />
+          <p className="text-[11px] text-muted-foreground">
+            {loadingStorage
+              ? "Loading..."
+              : `${formatSize(usedBytes)} of 5 GB used`}
+          </p>
         </div>
       </SheetContent>
     </Sheet>
