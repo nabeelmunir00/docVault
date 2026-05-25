@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/lib/supabase";
 import {
   LayoutDashboard,
   Upload,
@@ -45,9 +47,61 @@ const navItems = [
   },
 ];
 
+const TOTAL_STORAGE = 5 * 1024 * 1024 * 1024; // 5GB in bytes
+
+const formatSize = (bytes: number) => {
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+  if (bytes < 1024 * 1024 * 1024)
+    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+  return (bytes / (1024 * 1024 * 1024)).toFixed(2) + " GB";
+};
+
 export default function Sidebar() {
   const pathname = usePathname();
+  const { user } = useUser();
   const [collapsed, setCollapsed] = useState(false);
+  const [usedBytes, setUsedBytes] = useState(0);
+  const [loadingStorage, setLoadingStorage] = useState(true);
+
+  // Fetch real storage
+  useEffect(() => {
+    const fetchStorage = async () => {
+      if (!user) return;
+      setLoadingStorage(true);
+
+      const { data } = await supabase
+        .from("documents")
+        .select("file_size")
+        .eq("user_id", user.id);
+
+      if (data) {
+        const total = data.reduce((acc, doc) => acc + (doc.file_size || 0), 0);
+        setUsedBytes(total);
+      }
+      setLoadingStorage(false);
+    };
+
+    fetchStorage();
+  }, [user, pathname]); // pathname change pe bhi refresh
+
+  const usedPercent = Math.min(
+    Math.round((usedBytes / TOTAL_STORAGE) * 100),
+    100,
+  );
+
+  const storageColor =
+    usedPercent >= 90
+      ? "text-red-500"
+      : usedPercent >= 70
+        ? "text-amber-500"
+        : "text-violet-500";
+
+  const progressColor =
+    usedPercent >= 90
+      ? "[&>div]:bg-red-500"
+      : usedPercent >= 70
+        ? "[&>div]:bg-amber-500"
+        : "";
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -64,17 +118,11 @@ export default function Sidebar() {
             collapsed ? "justify-center" : "justify-between",
           )}
         >
-          {/* Logo */}
-          <div
-            className={cn(
-              "flex items-center gap-2 group",
-              collapsed ? "hidden" : "block",
-            )}
-          >
+          {!collapsed && (
             <span className="text-lg font-semibold">
               Doc<span className="text-violet-600">Vault</span>
             </span>
-          </div>
+          )}
           <Button
             variant="ghost"
             size="icon"
@@ -89,29 +137,26 @@ export default function Sidebar() {
           </Button>
         </div>
 
+        {/* Nav */}
         <ScrollArea className="flex-1 px-2 py-3">
           {navItems.map((group) => (
             <div key={group.label} className="mb-5">
-              {/* Group Label — hide when collapsed */}
               {!collapsed && (
                 <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest px-3 mb-2">
                   {group.label}
                 </p>
               )}
-
-              {/* Divider when collapsed */}
               {collapsed && <div className="h-px bg-border/60 mx-2 mb-2" />}
-
               <div className="flex flex-col gap-0.5">
                 {group.items.map((item) => {
                   const isActive = pathname === item.href;
 
                   return collapsed ? (
-                    // Collapsed — icon only with tooltip
                     <Tooltip key={item.href}>
                       <TooltipTrigger asChild>
                         <Link
                           href={item.href}
+                          prefetch={true}
                           className={cn(
                             "flex items-center justify-center w-9 h-9 rounded-lg mx-auto transition-all",
                             isActive
@@ -125,10 +170,10 @@ export default function Sidebar() {
                       <TooltipContent side="right">{item.label}</TooltipContent>
                     </Tooltip>
                   ) : (
-                    // Expanded — full label
                     <Link
                       key={item.href}
                       href={item.href}
+                      prefetch={true}
                       className={cn(
                         "flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-sm transition-all group",
                         isActive
@@ -161,32 +206,37 @@ export default function Sidebar() {
         {/* Storage Box */}
         <div className="p-3 border-t border-border/60">
           {collapsed ? (
-            // Collapsed storage — just icon
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="flex items-center justify-center w-9 h-9 rounded-lg mx-auto bg-muted/40 cursor-default">
-                  <Cloud className="w-4 h-4 text-violet-500" />
+                  <Cloud className={cn("w-4 h-4", storageColor)} />
                 </div>
               </TooltipTrigger>
               <TooltipContent side="right">
-                Storage: 3.1 GB of 5 GB (62%)
+                Storage: {formatSize(usedBytes)} of 5 GB ({usedPercent}%)
               </TooltipContent>
             </Tooltip>
           ) : (
-            // Expanded storage
             <div className="bg-muted/40 rounded-xl p-3">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  <Cloud className="w-3.5 h-3.5 text-violet-500" />
+                  <Cloud className={cn("w-3.5 h-3.5", storageColor)} />
                   <span className="text-xs font-medium text-foreground">
                     Storage
                   </span>
                 </div>
-                <span className="text-[10px] text-muted-foreground">62%</span>
+                <span className={cn("text-[10px] font-medium", storageColor)}>
+                  {loadingStorage ? "..." : `${usedPercent}%`}
+                </span>
               </div>
-              <Progress value={62} className="h-1.5 mb-2" />
+              <Progress
+                value={loadingStorage ? 0 : usedPercent}
+                className={cn("h-1.5 mb-2", progressColor)}
+              />
               <p className="text-[11px] text-muted-foreground">
-                3.1 GB of 5 GB used
+                {loadingStorage
+                  ? "Loading..."
+                  : `${formatSize(usedBytes)} of 5 GB used`}
               </p>
             </div>
           )}

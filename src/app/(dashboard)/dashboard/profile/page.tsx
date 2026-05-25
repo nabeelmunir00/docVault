@@ -1,17 +1,27 @@
 "use client";
-
 import { useUser } from "@clerk/nextjs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User, Mail, Calendar, Shield, Files, Database } from "lucide-react";
+import {
+  User,
+  Mail,
+  Calendar,
+  Shield,
+  Files,
+  Database,
+  Settings,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import UserProfileModal from "@/components/UserProfileModal";
+import { Button } from "@/components/ui/button";
 
 export default function ProfilePage() {
   const { user } = useUser();
   const [totalFiles, setTotalFiles] = useState(0);
   const [totalSize, setTotalSize] = useState(0);
+  const [profileModal, setProfileModal] = useState(false);
 
   // Fetch user stats
   useEffect(() => {
@@ -214,15 +224,27 @@ export default function ProfilePage() {
                 Update your profile, password and security settings
               </p>
             </div>
-            <a
-              href="/user-profile"
-              className="text-xs text-violet-600 hover:text-violet-700 font-medium transition-colors"
+            <Button
+              variant={"ghost"}
+              onClick={() => setProfileModal(true)}
+              className="text-xs text-violet-600 hidden sm:block  hover:text-violet-700 font-medium transition-colors"
             >
               Open settings →
-            </a>
+            </Button>
+            <Button
+              variant={"ghost"}
+              onClick={() => setProfileModal(true)}
+              className="text-xs sm:hidden text-violet-600 hover:text-violet-700 font-medium transition-colors"
+            >
+              <Settings />
+            </Button>
           </CardContent>
         </Card>
       </div>
+      <UserProfileModal
+        open={profileModal}
+        onClose={() => setProfileModal(false)}
+      />
     </div>
   );
 }
