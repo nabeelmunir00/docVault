@@ -8,6 +8,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import DeleteModal from "@/components/DeleteModal";
+import { MoreVertical } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import {
   FileText,
@@ -307,7 +314,7 @@ export default function FilesPage() {
                   </div>
 
                   {/* Actions */}
-                  <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex items-center gap-1.5 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
                     <Button
                       variant="outline"
                       size="sm"
@@ -338,6 +345,7 @@ export default function FilesPage() {
         </div>
       )}
 
+      {/* List View */}
       {/* List View */}
       {!loading && filtered.length > 0 && view === "list" && (
         <Card className="border-border/60">
@@ -398,8 +406,8 @@ export default function FilesPage() {
                     {formatDate(doc.created_at)}
                   </div>
 
-                  {/* Actions */}
-                  <div className="col-span-1 flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  {/* Actions - Desktop (visible on md and above) */}
+                  <div className="hidden md:flex col-span-1 items-center justify-end gap-1 sm:opacity-0 group-hover:opacity-100 transition-opacity">
                     <Button
                       variant="ghost"
                       size="icon"
@@ -421,6 +429,42 @@ export default function FilesPage() {
                         <Trash2 className="w-3.5 h-3.5" />
                       )}
                     </Button>
+                  </div>
+
+                  {/* Actions - Mobile (visible only on mobile) */}
+                  <div className="md:hidden col-span-1 flex items-center justify-end">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="w-7 h-7 rounded-lg"
+                        >
+                          <MoreVertical className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-40">
+                        <DropdownMenuItem
+                          onClick={() => handleDownload(doc)}
+                          className="cursor-pointer"
+                        >
+                          <Download className="w-4 h-4 mr-2" />
+                          Download
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => openDelete(doc)}
+                          disabled={deleting === doc.id}
+                          className="cursor-pointer text-red-600 focus:text-red-600"
+                        >
+                          {deleting === doc.id ? (
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          ) : (
+                            <Trash2 className="w-4 h-4 mr-2" />
+                          )}
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
               );

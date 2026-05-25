@@ -15,10 +15,17 @@ import {
   Trash2,
   Clock,
   Loader2,
+  MoreVertical,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import DeleteModal from "@/components/DeleteModal";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 // Types
 export interface Document {
@@ -89,11 +96,11 @@ export const timeAgo = (date: string) => {
 
 // Props
 interface RecentUploadsTableProps {
-  limit?: number; // kitni files dikhni hain (default 5)
-  showHeader?: boolean; // header show karna hai ya nahi
-  autoRefresh?: boolean; // auto refresh on/off
-  refreshInterval?: number; // ms mein (default 30000)
-  activeRoute?: string; // sirf is route pe refresh hoga
+  limit?: number;
+  showHeader?: boolean;
+  autoRefresh?: boolean;
+  refreshInterval?: number;
+  activeRoute?: string;
   onDeleteSuccess?: () => void;
 }
 
@@ -134,7 +141,7 @@ export default function RecentUploadsTable({
     fetchRecent();
   }, [user]);
 
-  // Auto refresh — sirf activeRoute pe (agar diya ho)
+  // Auto refresh
   useEffect(() => {
     if (!autoRefresh) return;
     if (activeRoute && pathname !== activeRoute) return;
@@ -146,7 +153,7 @@ export default function RecentUploadsTable({
     return () => clearInterval(interval);
   }, [user, pathname, autoRefresh, activeRoute, refreshInterval]);
 
-  // Live time tick — sirf activeRoute pe
+  // Live time tick
   useEffect(() => {
     if (activeRoute && pathname !== activeRoute) return;
 
@@ -305,8 +312,8 @@ export default function RecentUploadsTable({
                 </span>
               </div>
 
-              {/* Actions */}
-              <div className="col-span-1 flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              {/* Actions - Desktop (visible on md and above) */}
+              <div className="hidden md:flex col-span-1 items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <Button
                   variant="ghost"
                   size="icon"
@@ -323,6 +330,37 @@ export default function RecentUploadsTable({
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </Button>
+              </div>
+
+              {/* Actions - Mobile (visible only on mobile) */}
+              <div className="md:hidden col-span-1 flex items-center justify-end">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="w-7 h-7 rounded-lg"
+                    >
+                      <MoreVertical className="w-4 h-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-40">
+                    <DropdownMenuItem
+                      onClick={() => handleDownload(doc)}
+                      className="cursor-pointer"
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Download
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => openDelete(doc)}
+                      className="cursor-pointer text-red-600 focus:text-red-600"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
           );
