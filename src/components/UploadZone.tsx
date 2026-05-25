@@ -222,9 +222,9 @@ export default function UploadZone({ onUploadComplete }: UploadZoneProps) {
             <>
               <div>
                 <p className="text-sm font-medium text-foreground">
-                  Files drag & drop karo ya{" "}
+                  Drag & drop your files here, or{" "}
                   <span className="text-violet-600 underline underline-offset-2">
-                    browse karo
+                    browse
                   </span>
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
