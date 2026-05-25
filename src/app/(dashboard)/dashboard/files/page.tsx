@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import DeleteModal from "@/components/DeleteModal";
-import { MoreVertical } from "lucide-react";
+import { Eye, MoreVertical } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,8 +26,10 @@ import {
   Search,
   Files,
   Loader2,
+  Video,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import FilePreviewModal from "@/components/FilePreviewModal";
 
 // Types
 interface Document {
@@ -68,6 +70,13 @@ const getFileInfo = (type: string) => {
       color: "text-blue-500",
       bg: "bg-blue-50 dark:bg-blue-950",
       label: "Word",
+    };
+  if (type.startsWith("video/"))
+    return {
+      icon: Video,
+      color: "text-purple-500",
+      bg: "bg-purple-50 dark:bg-purple-950",
+      label: "Video",
     };
   return {
     icon: File,
@@ -149,7 +158,7 @@ export default function FilesPage() {
       const link = document.createElement("a");
       link.href = data.signedUrl;
       link.download = doc.file_name;
-      // link.click();
+      link.click();
 
       // ✅ Download toast
       toast.success("Download started!", {
@@ -200,7 +209,15 @@ export default function FilesPage() {
     setDeleteModal(false);
     setSelectedDoc(null);
   };
+  const [previewModal, setPreviewModal] = useState(false);
+  const [selectedPreviewDoc, setSelectedPreviewDoc] = useState<Document | null>(
+    null,
+  );
 
+  const openPreview = (doc: Document) => {
+    setSelectedPreviewDoc(doc);
+    setPreviewModal(true);
+  };
   return (
     <div className="p-6 max-w-6xl mx-auto">
       {/* Header */}
@@ -327,6 +344,14 @@ export default function FilesPage() {
                     <Button
                       variant="outline"
                       size="sm"
+                      onClick={() => openPreview(doc)}
+                      className="h-7 w-7 p-0 rounded-lg border-border/60"
+                    >
+                      <Eye className="w-3 h-3" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => openDelete(doc)}
                       disabled={deleting === doc.id}
                       className="h-7 w-7 p-0 rounded-lg border-border/60 hover:border-red-300 hover:text-red-500"
@@ -419,6 +444,14 @@ export default function FilesPage() {
                     <Button
                       variant="ghost"
                       size="icon"
+                      onClick={() => openPreview(doc)}
+                      className="w-7 h-7 rounded-lg hover:text-violet-600"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       onClick={() => openDelete(doc)}
                       disabled={deleting === doc.id}
                       className="w-7 h-7 rounded-lg hover:text-red-500"
@@ -452,6 +485,13 @@ export default function FilesPage() {
                           Download
                         </DropdownMenuItem>
                         <DropdownMenuItem
+                          onClick={() => openPreview(doc)}
+                          className="cursor-pointer"
+                        >
+                          <Eye className="w-4 h-4 mr-2" />
+                          Preview
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
                           onClick={() => openDelete(doc)}
                           disabled={deleting === doc.id}
                           className="cursor-pointer text-red-600 focus:text-red-600"
@@ -483,6 +523,15 @@ export default function FilesPage() {
         fileName={selectedDoc?.file_name ?? ""}
         fileType={selectedDoc?.file_type ?? ""}
         isDeleting={deleting === selectedDoc?.id}
+      />
+
+      <FilePreviewModal
+        open={previewModal}
+        onClose={() => {
+          setPreviewModal(false);
+          setSelectedPreviewDoc(null);
+        }}
+        document={selectedPreviewDoc}
       />
     </div>
   );

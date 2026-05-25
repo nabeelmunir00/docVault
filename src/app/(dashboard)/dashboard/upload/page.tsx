@@ -27,7 +27,7 @@ export default function UploadPage() {
             <div>
               <CardTitle className="text-sm font-medium">File Upload</CardTitle>
               <CardDescription className="text-xs">
-                PDF, PNG, JPG, DOCX, XLSX — max 50MB
+                PDF, PNG, JPG, DOCX, XLSX,MP4 — max 50MB
               </CardDescription>
             </div>
           </div>
