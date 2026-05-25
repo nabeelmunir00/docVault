@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import DeleteModal from "@/components/DeleteModal";
+import { toast } from "sonner";
 import {
   FileText,
   ImageIcon,
@@ -141,7 +142,17 @@ export default function FilesPage() {
       const link = document.createElement("a");
       link.href = data.signedUrl;
       link.download = doc.file_name;
-      link.click();
+      // link.click();
+
+      // ✅ Download toast
+      toast.success("Download started!", {
+        description: `${doc.file_name} is being downloaded.`,
+      });
+    } else {
+      // ❌ Error toast
+      toast.error("Download failed!", {
+        description: "Could not generate download link.",
+      });
     }
   };
 
@@ -155,11 +166,29 @@ export default function FilesPage() {
     if (!selectedDoc) return;
     setDeleting(selectedDoc.id);
 
-    await supabase.storage.from("documents").remove([selectedDoc.storage_path]);
+    const { error: storageError } = await supabase.storage
+      .from("documents")
+      .remove([selectedDoc.storage_path]);
 
-    await supabase.from("documents").delete().eq("id", selectedDoc.id);
+    const { error: dbError } = await supabase
+      .from("documents")
+      .delete()
+      .eq("id", selectedDoc.id);
 
-    setDocuments((prev) => prev.filter((d) => d.id !== selectedDoc.id));
+    if (storageError || dbError) {
+      // ❌ Error toast
+      toast.error("Delete failed!", {
+        description: "Could not delete the file. Try again.",
+      });
+    } else {
+      setDocuments((prev) => prev.filter((d) => d.id !== selectedDoc.id));
+
+      // ✅ Delete toast
+      toast.success("File deleted!", {
+        description: `${selectedDoc.file_name} has been permanently deleted.`,
+      });
+    }
+
     setDeleting(null);
     setDeleteModal(false);
     setSelectedDoc(null);
