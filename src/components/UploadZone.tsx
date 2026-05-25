@@ -97,12 +97,22 @@ export default function UploadZone({ onUploadComplete }: UploadZoneProps) {
       "application/pdf": [".pdf"],
       "image/png": [".png"],
       "image/jpeg": [".jpg", ".jpeg"],
+
+      // Word
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
         [".docx"],
+
+      // Excel
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [
         ".xlsx",
       ],
+
+      // Videos
+      "video/mp4": [".mp4"],
+      "video/webm": [".webm"],
+      "video/quicktime": [".mov"],
     },
+
     maxSize: 50 * 1024 * 1024, // 50MB
     disabled: uploading,
   });
