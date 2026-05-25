@@ -100,14 +100,6 @@ export default function DeleteModal({
                 </p>
               </div>
             </div>
-
-            {/* Close Button */}
-            <button
-              onClick={handleClose}
-              className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
           </div>
         </DialogHeader>
 
