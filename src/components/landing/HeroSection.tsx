@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { SignInButton, SignIn, SignOutButton } from "@clerk/nextjs";
+import { motion } from "motion/react";
+
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -59,7 +60,12 @@ export default function HeroSection() {
           {/* Left Side */}
           <div className="flex flex-col gap-6">
             {/* Badge */}
-            <div className="w-fit">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="w-fit"
+            >
               <Badge
                 variant="secondary"
                 className="gap-1.5 px-3 py-1.5 text-xs font-medium bg-violet-50 text-violet-700 border border-violet-200 dark:bg-violet-950 dark:text-violet-300 dark:border-violet-800"
@@ -67,10 +73,15 @@ export default function HeroSection() {
                 <Sparkles className="w-3 h-3" />
                 Powered by Supabase + Clerk
               </Badge>
-            </div>
+            </motion.div>
 
             {/* Heading */}
-            <div className="flex flex-col gap-3">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="flex flex-col gap-3"
+            >
               <h1 className="text-5xl sm:text-6xl font-bold tracking-tight text-foreground leading-tight">
                 Store your files{" "}
                 <span className="text-violet-600 dark:text-violet-400">
@@ -82,72 +93,84 @@ export default function HeroSection() {
                 Upload, manage, and access your documents from anywhere. Secure,
                 fast, and beautifully designed for professionals.
               </p>
-            </div>
+            </motion.div>
 
             {/* CTA Buttons */}
-            <div className="flex flex-wrap items-center gap-3">
-              <SignInButton mode="modal">
-                <Button
-                  size="lg"
-                  className="bg-violet-600 hover:bg-violet-700 text-white gap-2 rounded-xl px-6 shadow-lg shadow-violet-200 dark:shadow-violet-900"
-                >
-                  Get started free
-                  <ArrowRight className="w-4 h-4" />
-                </Button>
-              </SignInButton>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="flex flex-wrap items-center gap-3"
+            >
+              <Button
+                size="lg"
+                className="bg-violet-600 hover:bg-violet-700 text-white gap-2 rounded-xl px-6 shadow-lg shadow-violet-200 dark:shadow-violet-900"
+              >
+                Get started free
+                <ArrowRight className="w-4 h-4" />
+              </Button>
 
               <Link href="/dashboard">
                 <Button
                   size="lg"
-                  className="bg-violet-600 hover:bg-violet-700 text-white gap-2 rounded-xl px-6 shadow-lg shadow-violet-200 dark:shadow-violet-900"
+                  className="bg-violet-600 hover:bg-violet-700 text-white gap-2 rounded-xl px-6 shadow-lg"
                 >
                   Go to Dashboard
                   <ArrowRight className="w-4 h-4" />
                 </Button>
               </Link>
 
-              <Button
-                variant="outline"
-                size="lg"
-                className="rounded-xl px-6 border-border"
-              >
+              <Button variant="outline" size="lg" className="rounded-xl px-6">
                 Learn more
               </Button>
-            </div>
+            </motion.div>
 
             {/* Trust Badges */}
-            <div className="flex flex-wrap items-center gap-5 pt-2">
-              <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                <Shield className="w-4 h-4 text-emerald-500" />
-                End-to-end encrypted
-              </div>
-              <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                <Users className="w-4 h-4 text-violet-500" />
-                12k+ users
-              </div>
-              <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                <Star className="w-4 h-4 text-amber-500" />
-                4.9 rating
-              </div>
-              <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                <Zap className="w-4 h-4 text-blue-500" />
-                99.9% uptime
-              </div>
-            </div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+              className="flex flex-wrap items-center gap-5 pt-2"
+            >
+              {[
+                {
+                  icon: Shield,
+                  color: "text-emerald-500",
+                  label: "End-to-end encrypted",
+                },
+                { icon: Users, color: "text-violet-500", label: "12k+ users" },
+                { icon: Star, color: "text-amber-500", label: "4.9 rating" },
+                { icon: Zap, color: "text-blue-500", label: "99.9% uptime" },
+              ].map((item) => (
+                <div
+                  key={item.label}
+                  className="flex items-center gap-1.5 text-sm text-muted-foreground"
+                >
+                  <item.icon className={`w-4 h-4 ${item.color}`} />
+                  {item.label}
+                </div>
+              ))}
+            </motion.div>
           </div>
 
           {/* Right Side — macOS Window */}
-          <div className="relative flex items-center justify-center">
-            {/* Glow effect */}
+          <motion.div
+            initial={{ opacity: 0, x: 40 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="relative flex items-center justify-center"
+          >
             <div className="absolute inset-0 bg-violet-400/10 dark:bg-violet-600/10 rounded-3xl blur-3xl" />
-
-            {/* Window */}
-            <div className="relative w-full max-w-md bg-background/80 backdrop-blur-xl border border-border/60 rounded-2xl shadow-2xl overflow-hidden">
-              {/* macOS Title Bar */}
+            <motion.div
+              animate={{ y: [0, -8, 0] }}
+              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+              className="relative w-full max-w-md bg-background/80 backdrop-blur-xl border border-border/60 rounded-2xl shadow-2xl overflow-hidden"
+            >
+              {/* macOS Bar */}
               <div className="flex items-center gap-2 px-4 py-3 border-b border-border/50 bg-muted/30">
-                <div className="w-3 h-3 rounded-full bg-red-400 hover:bg-red-500 transition-colors cursor-pointer" />
-                <div className="w-3 h-3 rounded-full bg-yellow-400 hover:bg-yellow-500 transition-colors cursor-pointer" />
-                <div className="w-3 h-3 rounded-full bg-green-400 hover:bg-green-500 transition-colors cursor-pointer" />
+                <div className="w-3 h-3 rounded-full bg-red-400" />
+                <div className="w-3 h-3 rounded-full bg-yellow-400" />
+                <div className="w-3 h-3 rounded-full bg-green-400" />
                 <span className="flex-1 text-center text-xs text-muted-foreground font-medium">
                   DocVault — My Files
                 </span>
@@ -182,9 +205,12 @@ export default function HeroSection() {
                 {/* File Items */}
                 <div className="flex flex-col gap-2">
                   {files.map((file, i) => (
-                    <div
+                    <motion.div
                       key={i}
-                      className="flex items-center gap-3 p-3 rounded-xl border border-border/50 bg-muted/20 hover:bg-muted/40 transition-colors"
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.5 + i * 0.15 }}
+                      className="flex items-center gap-3 p-3 rounded-xl border border-border/50 bg-muted/20"
                     >
                       <div
                         className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${file.bg}`}
@@ -197,29 +223,30 @@ export default function HeroSection() {
                         </p>
                         <p className="text-xs text-muted-foreground">
                           {file.size}
-                          {!file.done && file.progress > 0 && " — uploading"}
-                          {!file.done && file.progress === 0 && " — waiting"}
                         </p>
                         <div className="mt-1.5 h-1 bg-border rounded-full overflow-hidden">
-                          <div
-                            className="h-full rounded-full bg-violet-500 transition-all duration-500"
-                            style={{ width: `${file.progress}%` }}
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${file.progress}%` }}
+                            transition={{ duration: 1, delay: 0.8 + i * 0.2 }}
+                            className="h-full rounded-full bg-violet-500"
                           />
                         </div>
                       </div>
-                      {file.done ? (
+                      {file.done && (
                         <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                      ) : (
+                      )}
+                      {!file.done && (
                         <span className="text-xs text-muted-foreground flex-shrink-0">
                           {file.progress > 0 ? `${file.progress}%` : "—"}
                         </span>
                       )}
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
               </div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </div>
       </div>
     </section>
