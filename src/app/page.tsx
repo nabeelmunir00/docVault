@@ -16,7 +16,7 @@ export default function Home() {
       <main>
         <HeroSection />
         <StatsSection />
-        <TrustedBySection />
+        {/* <TrustedBySection /> */}
         <FeaturesSection />
         <TestimonialsSection />
 
