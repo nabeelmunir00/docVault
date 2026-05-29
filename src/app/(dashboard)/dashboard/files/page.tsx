@@ -165,7 +165,7 @@ export default function FilesPage() {
         link.href = blobUrl;
         link.download = doc.file_name;
         window.document.body.appendChild(link);
-        link.click();
+        // link.click();
         window.document.body.removeChild(link);
 
         // Cleanup
