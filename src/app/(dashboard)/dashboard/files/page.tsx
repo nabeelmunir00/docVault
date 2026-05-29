@@ -155,17 +155,31 @@ export default function FilesPage() {
       .createSignedUrl(doc.storage_path, 60);
 
     if (data?.signedUrl) {
-      const link = document.createElement("a");
-      link.href = data.signedUrl;
-      link.download = doc.file_name;
-      link.click();
+      try {
+        // Fetch karke blob banao
+        const response = await fetch(data.signedUrl);
+        const blob = await response.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
 
-      // ✅ Download toast
-      toast.success("Download started!", {
-        description: `${doc.file_name} is being downloaded.`,
-      });
+        const link = window.document.createElement("a");
+        link.href = blobUrl;
+        link.download = doc.file_name;
+        window.document.body.appendChild(link);
+        link.click();
+        window.document.body.removeChild(link);
+
+        // Cleanup
+        window.URL.revokeObjectURL(blobUrl);
+
+        toast.success("Download started!", {
+          description: `${doc.file_name} is being downloaded.`,
+        });
+      } catch {
+        toast.error("Download failed!", {
+          description: "Could not download the file.",
+        });
+      }
     } else {
-      // ❌ Error toast
       toast.error("Download failed!", {
         description: "Could not generate download link.",
       });
