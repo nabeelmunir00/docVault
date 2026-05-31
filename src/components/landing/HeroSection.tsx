@@ -102,13 +102,15 @@ export default function HeroSection() {
               transition={{ duration: 0.5, delay: 0.3 }}
               className="flex flex-wrap items-center gap-3"
             >
+              <Link href="/dashboard/upload">
               <Button
                 size="lg"
                 className="bg-violet-600 hover:bg-violet-700 text-white gap-2 rounded-xl px-6 shadow-lg shadow-violet-200 dark:shadow-violet-900"
-              >
+                >
                 Get started free
                 <ArrowRight className="w-4 h-4" />
               </Button>
+                </Link>
 
               <Link href="/dashboard">
                 <Button

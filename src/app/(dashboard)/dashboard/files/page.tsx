@@ -156,20 +156,20 @@ export default function FilesPage() {
 
     if (data?.signedUrl) {
       try {
-        // Fetch karke blob banao
-        const response = await fetch(data.signedUrl);
-        const blob = await response.blob();
-        const blobUrl = window.URL.createObjectURL(blob);
+        // const response = await fetch(data.signedUrl);
+        // const blob = await response.blob();
+        // const blobUrl = window.URL.createObjectURL(blob);
+        const blobUrl = data.signedUrl;
 
         const link = window.document.createElement("a");
         link.href = blobUrl;
         link.download = doc.file_name;
         window.document.body.appendChild(link);
-        // link.click();
+        link.click();
         window.document.body.removeChild(link);
 
         // Cleanup
-        window.URL.revokeObjectURL(blobUrl);
+        // window.URL.revokeObjectURL(blobUrl);
 
         toast.success("Download started!", {
           description: `${doc.file_name} is being downloaded.`,
