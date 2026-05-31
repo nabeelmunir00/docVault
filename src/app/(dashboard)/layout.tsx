@@ -22,7 +22,7 @@ function DashboardNavbar() {
       </div>
 
       {/* Right — Theme + User */}
-      <div className="flex items-center gap-2 ml-auto">
+      <div className="flex items-center gap-4 ml-auto">
         <Button
           variant="ghost"
           size="icon"
