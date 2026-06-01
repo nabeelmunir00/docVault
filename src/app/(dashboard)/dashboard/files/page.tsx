@@ -50,6 +50,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import UploadZone from "@/components/UploadZone";
 
 interface Document {
   id: string;
@@ -953,17 +954,23 @@ export default function FilesPage() {
       />
 
       {/* File Upload Modal */}
-      <FileUploadModal
-        open={uploadModal}
-        onClose={() => setUploadModal(false)}
-        onUploadComplete={() => {
-          fetchDocuments();
-          fetchFolders();
-        }}
-        folders={folders}
-        currentFolderId={currentFolder?.id || null}
-        userId={user.id}
-      />
+      <Dialog open={uploadModal} onOpenChange={setUploadModal}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Upload Files</DialogTitle>
+          </DialogHeader>
+          <UploadZone
+            onUploadComplete={() => {
+              fetchDocuments();
+              fetchFolders();
+              setUploadModal(false);
+            }}
+            folders={folders}
+            currentFolderId={currentFolder?.id || null}
+            showFolderSelector={true}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
