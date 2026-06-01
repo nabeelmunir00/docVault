@@ -81,7 +81,7 @@ export default function DeleteModal({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md rounded-2xl border-border/60 p-0 overflow-hidden">
+      <DialogContent className="max-w-md md:max-w-lg rounded-2xl border-border/60 p-0 overflow-hidden">
         {/* Header */}
         <DialogHeader className="px-6 pt-6 pb-0">
           <div className="flex items-start justify-between">
