@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { FolderPlus, X } from "lucide-react";
+import { FolderPlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface CreateFolderModalProps {
@@ -57,12 +57,6 @@ export default function CreateFolderModal({
                 </p>
               </div>
             </div>
-            <button
-              onClick={handleClose}
-              className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
           </div>
         </DialogHeader>
 
