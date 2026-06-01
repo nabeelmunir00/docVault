@@ -314,7 +314,7 @@ export default function RecentUploadsTable({
               </div>
 
               {/* Actions - Desktop (visible on md and above) */}
-              <div className="hidden md:flex col-span-1 items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="hidden md:flex col-span-1 items-center justify-end gap-1  transition-opacity">
                 <Button
                   variant="ghost"
                   size="icon"
