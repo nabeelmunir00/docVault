@@ -59,7 +59,6 @@ interface Document {
   storage_path: string;
   created_at: string;
   folder_id: string | null;
-  public_url?: string;
 }
 
 interface FolderItem {
@@ -163,9 +162,7 @@ function FileUploadModal({
     const fileName = `${Date.now()}_${Math.random()
       .toString(36)
       .substring(7)}.${fileExt}`;
-    const filePath = `users/${userId}/${
-      selectedFolderId ? `folder_${selectedFolderId}/` : ""
-    }${fileName}`;
+    const filePath = `${user.id}/${Date.now()}_${file.name}`;
 
     try {
       // Upload to storage
@@ -176,9 +173,6 @@ function FileUploadModal({
       if (uploadError) throw uploadError;
 
       // Get public URL
-      const { data: urlData } = supabase.storage
-        .from("documents")
-        .getPublicUrl(filePath);
 
       // Save to database
       const { error: dbError } = await supabase.from("documents").insert({
@@ -187,7 +181,6 @@ function FileUploadModal({
         file_type: file.type,
         file_size: file.size,
         storage_path: filePath,
-        public_url: urlData.publicUrl,
         folder_id: selectedFolderId,
       });
 
@@ -212,6 +205,7 @@ function FileUploadModal({
       setUploading(false);
     }
   };
+  const { user } = useUser();
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -357,6 +351,8 @@ export default function FilesPage() {
     if (!user) return;
     setLoading(true);
 
+    console.log("Current folder:", currentFolder); // Debug
+
     let query = supabase
       .from("documents")
       .select("*")
@@ -364,12 +360,18 @@ export default function FilesPage() {
       .order("created_at", { ascending: false });
 
     if (currentFolder) {
+      console.log("Fetching documents for folder:", currentFolder.id);
       query = query.eq("folder_id", currentFolder.id);
     } else {
+      console.log("Fetching root documents (folder_id IS NULL)");
       query = query.is("folder_id", null);
     }
 
     const { data, error } = await query;
+
+    console.log("Fetched documents:", data); // Debug
+    console.log("Error:", error); // Debug
+
     if (!error && data) {
       setDocuments(data);
       setFiltered(data);
