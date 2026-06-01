@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import FilePreviewModal from "@/components/FilePreviewModal";
+import { handleDownload } from "@/utils/handleDownload";
 
 // Types
 interface Document {
@@ -149,42 +150,49 @@ export default function FilesPage() {
   }, [search, documents]);
 
   // Download file
-  const handleDownload = async (doc: Document) => {
-    const { data } = await supabase.storage
-      .from("documents")
-      .createSignedUrl(doc.storage_path, 60);
+  // const handleDownload = async (doc: Document) => {
+  //   debugger;
+  //   const { data } = await supabase.storage
+  //     .from("documents")
+  //     .createSignedUrl(doc.storage_path, 60);
 
-    if (data?.signedUrl) {
-      try {
-        // const response = await fetch(data.signedUrl);
-        // const blob = await response.blob();
-        // const blobUrl = window.URL.createObjectURL(blob);
-        const blobUrl = data.signedUrl;
+  //   if (data?.signedUrl) {
+  //     toast.success("Download started!", {
+  //       description: `${doc.file_name} is being downloaded.`,
+  //     });
 
-        const link = window.document.createElement("a");
-        link.href = blobUrl;
-        link.download = doc.file_name;
-        window.document.body.appendChild(link);
-        link.click();
-        window.document.body.removeChild(link);
+  //     try {
+  //       // Pehle file ko fetch karo blob ki tarah
+  //       const response = await fetch(data.signedUrl);
+  //       const blob = await response.blob();
 
-        // Cleanup
-        // window.URL.revokeObjectURL(blobUrl);
+  //       // Blob URL banao
+  //       const blobUrl = window.URL.createObjectURL(blob);
 
-        toast.success("Download started!", {
-          description: `${doc.file_name} is being downloaded.`,
-        });
-      } catch {
-        toast.error("Download failed!", {
-          description: "Could not download the file.",
-        });
-      }
-    } else {
-      toast.error("Download failed!", {
-        description: "Could not generate download link.",
-      });
-    }
-  };
+  //       const link = window.document.createElement("a");
+  //       link.href = blobUrl;
+  //       link.download = doc.file_name;
+  //       window.document.body.appendChild(link);
+  //       link.click();
+  //       window.document.body.removeChild(link);
+
+  //       // Cleanup
+  //       window.URL.revokeObjectURL(blobUrl);
+
+  //       toast.success("Download completed!", {
+  //         description: `${doc.file_name} has been downloaded successfully.`,
+  //       });
+  //     } catch {
+  //       toast.error("Download failed!", {
+  //         description: "Could not download the file.",
+  //       });
+  //     }
+  //   } else {
+  //     toast.error("Download failed!", {
+  //       description: "Could not generate download link.",
+  //     });
+  //   }
+  // };
 
   // Delete file
 

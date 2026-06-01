@@ -26,6 +26,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { handleDownload } from "@/utils/handleDownload";
 
 // Types
 export interface Document {
@@ -162,25 +163,25 @@ export default function RecentUploadsTable({
   }, [pathname, activeRoute]);
 
   // Download
-  const handleDownload = async (doc: Document) => {
-    const { data } = await supabase.storage
-      .from("documents")
-      .createSignedUrl(doc.storage_path, 60);
+  // const handleDownload = async (doc: Document) => {
+  //   const { data } = await supabase.storage
+  //     .from("documents")
+  //     .createSignedUrl(doc.storage_path, 60);
 
-    if (data?.signedUrl) {
-      const link = document.createElement("a");
-      link.href = data.signedUrl;
-      link.download = doc.file_name;
-      link.click();
-      toast.success("Download started!", {
-        description: `${doc.file_name} is being downloaded.`,
-      });
-    } else {
-      toast.error("Download failed!", {
-        description: "Could not generate download link.",
-      });
-    }
-  };
+  //   if (data?.signedUrl) {
+  //     const link = document.createElement("a");
+  //     link.href = data.signedUrl;
+  //     link.download = doc.file_name;
+  //     link.click();
+  //     toast.success("Download started!", {
+  //       description: `${doc.file_name} is being downloaded.`,
+  //     });
+  //   } else {
+  //     toast.error("Download failed!", {
+  //       description: "Could not generate download link.",
+  //     });
+  //   }
+  // };
 
   // Delete
   const openDelete = (doc: Document) => {
