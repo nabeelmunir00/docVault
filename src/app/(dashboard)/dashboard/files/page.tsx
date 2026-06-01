@@ -43,13 +43,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+
 import UploadZone from "@/components/UploadZone";
 
 interface Document {
@@ -66,6 +60,68 @@ interface FolderItem {
   id: string;
   name: string;
   created_at: string;
+}
+
+// Folder Delete Modal Component
+function FolderDeleteModal({
+  open,
+  onClose,
+  onConfirm,
+  folderName,
+  isDeleting,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  folderName: string;
+  isDeleting: boolean;
+}) {
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Delete Folder</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="flex items-center justify-center w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/20 mx-auto">
+            <Trash2 className="w-6 h-6 text-red-600 dark:text-red-400" />
+          </div>
+          <div className="text-center space-y-2">
+            <p className="text-sm text-foreground">
+              Are you sure you want to delete folder{" "}
+              <span className="font-semibold">"{folderName}"</span>?
+            </p>
+            <p className="text-xs text-muted-foreground">
+              All files inside this folder will be moved to the root directory.
+              The folder itself will be permanently deleted.
+            </p>
+          </div>
+          <div className="flex gap-3 justify-end">
+            <Button variant="outline" onClick={onClose} disabled={isDeleting}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={onConfirm}
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete Folder
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
 }
 
 const getFileInfo = (type: string) => {
@@ -126,190 +182,6 @@ const formatDate = (date: string) => {
   });
 };
 
-// File Upload Modal Component
-function FileUploadModal({
-  open,
-  onClose,
-  onUploadComplete,
-  folders,
-  currentFolderId,
-  userId,
-}: {
-  open: boolean;
-  onClose: () => void;
-  onUploadComplete: () => void;
-  folders: FolderItem[];
-  currentFolderId: string | null;
-  userId: string;
-}) {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(
-    currentFolderId || null,
-  );
-  const [uploading, setUploading] = useState(false);
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setSelectedFile(e.target.files[0]);
-    }
-  };
-
-  const handleUpload = async () => {
-    if (!selectedFile || !userId) return;
-
-    setUploading(true);
-    const file = selectedFile;
-    const fileExt = file.name.split(".").pop();
-    const fileName = `${Date.now()}_${Math.random()
-      .toString(36)
-      .substring(7)}.${fileExt}`;
-    const filePath = `${selectedFolderId || ""}/${Date.now()}_${fileName}`;
-
-    try {
-      // Upload to storage
-      const { error: uploadError } = await supabase.storage
-        .from("documents")
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      // Get public URL
-
-      // Save to database
-      const { error: dbError } = await supabase.from("documents").insert({
-        user_id: userId,
-        file_name: file.name,
-        file_type: file.type,
-        file_size: file.size,
-        storage_path: filePath,
-        folder_id: selectedFolderId,
-      });
-
-      if (dbError) throw dbError;
-
-      toast.success("File uploaded successfully!", {
-        description: `${file.name} has been uploaded${
-          selectedFolderId ? " to folder" : ""
-        }.`,
-      });
-
-      onUploadComplete();
-      onClose();
-      setSelectedFile(null);
-      setSelectedFolderId(currentFolderId || null);
-    } catch (error) {
-      console.error("Upload error:", error);
-      toast.error("Upload failed!", {
-        description: "There was an error uploading your file.",
-      });
-    } finally {
-      setUploading(false);
-    }
-  };
-  const { user } = useUser();
-
-  return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Upload File</DialogTitle>
-        </DialogHeader>
-
-        <div className="space-y-4">
-          {/* Folder Selection */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">
-              Select Folder (Optional)
-            </label>
-            <Select
-              value={selectedFolderId || "root"}
-              onValueChange={(value) =>
-                setSelectedFolderId(value === "root" ? null : value)
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Choose a folder" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="root">
-                  <div className="flex items-center gap-2">
-                    <Folder className="w-4 h-4" />
-                    <span>Root Directory</span>
-                  </div>
-                </SelectItem>
-                {folders.map((folder) => (
-                  <SelectItem key={folder.id} value={folder.id}>
-                    <div className="flex items-center gap-2">
-                      <Folder className="w-4 h-4" />
-                      <span>{folder.name}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* File Selection */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Select File</label>
-            <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
-              <input
-                type="file"
-                onChange={handleFileSelect}
-                className="hidden"
-                id="file-upload-input"
-              />
-              <label
-                htmlFor="file-upload-input"
-                className="cursor-pointer flex flex-col items-center gap-2"
-              >
-                <Upload className="w-8 h-8 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">
-                  Click to select a file
-                </span>
-              </label>
-            </div>
-            {selectedFile && (
-              <div className="flex items-center justify-between bg-muted/30 rounded-lg p-2">
-                <span className="text-sm truncate flex-1">
-                  {selectedFile.name}
-                </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setSelectedFile(null)}
-                  className="h-6 w-6 p-0"
-                >
-                  <Trash2 className="w-3 h-3" />
-                </Button>
-              </div>
-            )}
-          </div>
-
-          {/* Upload Button */}
-          <Button
-            onClick={handleUpload}
-            disabled={!selectedFile || uploading}
-            className="w-full"
-          >
-            {uploading ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Uploading...
-              </>
-            ) : (
-              <>
-                <Upload className="w-4 h-4 mr-2" />
-                Upload File
-              </>
-            )}
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
 export default function FilesPage() {
   const { user } = useUser();
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -326,9 +198,14 @@ export default function FilesPage() {
   const [createFolderModal, setCreateFolderModal] = useState(false);
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
 
-  // Delete states
+  // Delete states for files
   const [deleteModal, setDeleteModal] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState<Document | null>(null);
+
+  // Delete states for folders
+  const [folderDeleteModal, setFolderDeleteModal] = useState(false);
+  const [selectedFolder, setSelectedFolder] = useState<FolderItem | null>(null);
+  const [isDeletingFolder, setIsDeletingFolder] = useState(false);
 
   // Preview states
   const [previewModal, setPreviewModal] = useState(false);
@@ -352,8 +229,6 @@ export default function FilesPage() {
     if (!user) return;
     setLoading(true);
 
-    console.log("Current folder:", currentFolder); // Debug
-
     let query = supabase
       .from("documents")
       .select("*")
@@ -361,17 +236,12 @@ export default function FilesPage() {
       .order("created_at", { ascending: false });
 
     if (currentFolder) {
-      console.log("Fetching documents for folder:", currentFolder.id);
       query = query.eq("folder_id", currentFolder.id);
     } else {
-      console.log("Fetching root documents (folder_id IS NULL)");
       query = query.is("folder_id", null);
     }
 
     const { data, error } = await query;
-
-    console.log("Fetched documents:", data); // Debug
-    console.log("Error:", error); // Debug
 
     if (!error && data) {
       setDocuments(data);
@@ -424,37 +294,57 @@ export default function FilesPage() {
     setCreateFolderModal(false);
   };
 
-  // Delete folder
-  const handleDeleteFolder = async (folder: FolderItem) => {
-    // First, move all files in this folder to root or delete them
-    const { data: filesInFolder } = await supabase
-      .from("documents")
-      .select("id")
-      .eq("folder_id", folder.id);
+  // Open folder delete modal
+  const openFolderDelete = (folder: FolderItem) => {
+    setSelectedFolder(folder);
+    setFolderDeleteModal(true);
+  };
 
-    if (filesInFolder && filesInFolder.length > 0) {
-      // Option 1: Move files to root
-      await supabase
+  // Delete folder with confirmation
+  const handleDeleteFolder = async () => {
+    if (!selectedFolder || !user) return;
+    setIsDeletingFolder(true);
+
+    try {
+      // First, move all files in this folder to root
+      const { data: filesInFolder } = await supabase
         .from("documents")
-        .update({ folder_id: null })
-        .eq("folder_id", folder.id);
+        .select("id")
+        .eq("folder_id", selectedFolder.id);
 
-      toast.info(`Moved ${filesInFolder.length} file(s) to root directory`);
-    }
+      if (filesInFolder && filesInFolder.length > 0) {
+        await supabase
+          .from("documents")
+          .update({ folder_id: null })
+          .eq("folder_id", selectedFolder.id);
 
-    // Delete the folder
-    const { error } = await supabase
-      .from("folders")
-      .delete()
-      .eq("id", folder.id);
+        toast.info(`Moved ${filesInFolder.length} file(s) to root directory`);
+      }
 
-    if (error) {
-      toast.error("Failed to delete folder!");
-    } else {
-      setFolders((prev) => prev.filter((f) => f.id !== folder.id));
+      // Delete the folder
+      const { error } = await supabase
+        .from("folders")
+        .delete()
+        .eq("id", selectedFolder.id);
+
+      if (error) {
+        throw error;
+      }
+
+      setFolders((prev) => prev.filter((f) => f.id !== selectedFolder.id));
       toast.success("Folder deleted!", {
-        description: `"${folder.name}" has been deleted. Files were moved to root.`,
+        description: `"${selectedFolder.name}" has been deleted. Files were moved to root.`,
       });
+    } catch (error) {
+      console.error("Error deleting folder:", error);
+      toast.error("Failed to delete folder!", {
+        description:
+          "There was an error deleting the folder. Please try again.",
+      });
+    } finally {
+      setIsDeletingFolder(false);
+      setFolderDeleteModal(false);
+      setSelectedFolder(null);
     }
   };
 
@@ -646,13 +536,13 @@ export default function FilesPage() {
                     <p className="text-[10px] text-muted-foreground">
                       {formatDate(folder.created_at)}
                     </p>
-                    {/* Delete folder */}
+                    {/* Delete folder button with modal trigger */}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleDeleteFolder(folder);
+                        openFolderDelete(folder);
                       }}
-                      className="absolute top-2 right-2 w-6 h-6 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-red-50 dark:hover:bg-red-950 hover:text-red-500 transition-all"
+                      className="absolute top-2 right-2 w-6 h-6 rounded-lg flex items-center justify-center sm:opacity-0 group-hover:opacity-100 hover:bg-red-50 dark:hover:bg-red-950 hover:text-red-500 transition-all"
                     >
                       <Trash2 className="w-3 h-3" />
                     </button>
@@ -932,6 +822,7 @@ export default function FilesPage() {
         isCreating={isCreatingFolder}
       />
 
+      {/* File Delete Modal */}
       <DeleteModal
         open={deleteModal}
         onClose={() => {
@@ -944,6 +835,19 @@ export default function FilesPage() {
         isDeleting={deleting === selectedDoc?.id}
       />
 
+      {/* Folder Delete Modal */}
+      <FolderDeleteModal
+        open={folderDeleteModal}
+        onClose={() => {
+          setFolderDeleteModal(false);
+          setSelectedFolder(null);
+        }}
+        onConfirm={handleDeleteFolder}
+        folderName={selectedFolder?.name ?? ""}
+        isDeleting={isDeletingFolder}
+      />
+
+      {/* File Preview Modal */}
       <FilePreviewModal
         open={previewModal}
         onClose={() => {
