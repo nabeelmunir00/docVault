@@ -103,14 +103,14 @@ export default function HeroSection() {
               className="flex flex-wrap items-center gap-3"
             >
               <Link href="/dashboard/upload">
-              <Button
-                size="lg"
-                className="bg-violet-600 hover:bg-violet-700 text-white gap-2 rounded-xl px-6 shadow-lg shadow-violet-200 dark:shadow-violet-900"
+                <Button
+                  size="lg"
+                  className="bg-violet-600 hover:bg-violet-700 text-white gap-2 rounded-xl px-6 shadow-lg"
                 >
-                Get started free
-                <ArrowRight className="w-4 h-4" />
-              </Button>
-                </Link>
+                  Get started free
+                  <ArrowRight className="w-4 h-4" />
+                </Button>
+              </Link>
 
               <Link href="/dashboard">
                 <Button
@@ -121,10 +121,6 @@ export default function HeroSection() {
                   <ArrowRight className="w-4 h-4" />
                 </Button>
               </Link>
-
-              <Button variant="outline" size="lg" className="rounded-xl px-6">
-                Learn more
-              </Button>
             </motion.div>
 
             {/* Trust Badges */}

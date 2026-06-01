@@ -431,6 +431,7 @@ export default function FilesPage() {
         <Button
           onClick={() => setUploadModal(true)}
           className="rounded-xl gap-2"
+          variant={"outline"}
         >
           <Upload className="w-4 h-4" />
           Upload File
@@ -602,6 +603,7 @@ export default function FilesPage() {
                     </Button>
                     <Button
                       size="sm"
+                      variant={"outline"}
                       onClick={() => setUploadModal(true)}
                       className="gap-1"
                     >
@@ -613,6 +615,7 @@ export default function FilesPage() {
                 {!search && currentFolder && (
                   <Button
                     size="sm"
+                    variant={"outline"}
                     onClick={() => setUploadModal(true)}
                     className="gap-1 mt-2"
                   >
