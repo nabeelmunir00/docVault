@@ -417,13 +417,7 @@ export default function UploadZone({
                     {/* Progress Bar */}
                     {(item.status === "uploading" ||
                       item.status === "pending") && (
-                      <Progress
-                        value={item.progress}
-                        className={cn(
-                          "h-1",
-                          item.status === "error" && "[&>div]:bg-red-500",
-                        )}
-                      />
+                      <Progress value={item.progress} className="h-1" />
                     )}
 
                     {/* Error message */}
