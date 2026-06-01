@@ -8,6 +8,13 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import {
   Cloud,
@@ -20,6 +27,7 @@ import {
   X,
   UploadCloud,
   Video,
+  Folder,
 } from "lucide-react";
 
 // File types
@@ -91,14 +99,30 @@ interface FileItem {
   error?: string;
 }
 
-interface UploadZoneProps {
-  onUploadComplete?: () => void;
+interface FolderItem {
+  id: string;
+  name: string;
 }
 
-export default function UploadZone({ onUploadComplete }: UploadZoneProps) {
+interface UploadZoneProps {
+  onUploadComplete?: () => void;
+  folders?: FolderItem[];
+  currentFolderId?: string | null;
+  showFolderSelector?: boolean;
+}
+
+export default function UploadZone({
+  onUploadComplete,
+  folders = [],
+  currentFolderId = null,
+  showFolderSelector = true,
+}: UploadZoneProps) {
   const { user } = useUser();
   const [files, setFiles] = useState<FileItem[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(
+    currentFolderId || null,
+  );
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const newFiles = acceptedFiles.map((file) => ({
@@ -143,11 +167,14 @@ export default function UploadZone({ onUploadComplete }: UploadZoneProps) {
     if (!user || files.length === 0) return;
     setUploading(true);
 
+    let successCount = 0;
+    let failCount = 0;
+
     for (let i = 0; i < files.length; i++) {
       if (files[i].status === "done") continue;
 
       const { file } = files[i];
-      const filePath = `${user.id}/${Date.now()}_${file.name}`;
+      const filePath = `${user.id}/${Date.now()}_${Math.random().toString(36).substring(7)}_${file.name}`;
 
       setFiles((prev) =>
         prev.map((f, idx) =>
@@ -172,6 +199,7 @@ export default function UploadZone({ onUploadComplete }: UploadZoneProps) {
           file_type: file.type,
           file_size: file.size,
           storage_path: filePath,
+          folder_id: selectedFolderId, // This is the key - uses selected folder
         });
 
         if (dbError) throw new Error(dbError.message);
@@ -182,9 +210,11 @@ export default function UploadZone({ onUploadComplete }: UploadZoneProps) {
           ),
         );
 
-        // ✅ Success toast
-        toast.success("File uploaded!", {
-          description: `${file.name} has been uploaded successfully.`,
+        successCount++;
+        toast.success(`${file.name} uploaded!`, {
+          description: selectedFolderId
+            ? `Saved to folder: ${folders.find((f) => f.id === selectedFolderId)?.name || "Selected folder"}`
+            : "Saved to root directory",
         });
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : "Upload failed";
@@ -195,16 +225,22 @@ export default function UploadZone({ onUploadComplete }: UploadZoneProps) {
               : f,
           ),
         );
-
-        // ❌ Error toast
-        toast.error("Upload failed!", {
-          description: `${file.name} could not be uploaded.`,
-        });
+        failCount++;
+        toast.error(`Failed to upload ${file.name}`);
       }
     }
 
+    if (successCount > 0) {
+      toast.success(`${successCount} file(s) uploaded successfully!`);
+      onUploadComplete?.();
+    }
+
     setUploading(false);
-    onUploadComplete?.();
+
+    // Auto-clear done files after 2 seconds
+    setTimeout(() => {
+      setFiles((prev) => prev.filter((f) => f.status !== "done"));
+    }, 2000);
   };
 
   const clearDone = () => {
@@ -216,6 +252,50 @@ export default function UploadZone({ onUploadComplete }: UploadZoneProps) {
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Folder Selector - Only show if enabled and folders exist */}
+      {showFolderSelector && folders.length > 0 && (
+        <div className="flex items-center justify-between">
+          <label className="text-sm font-medium flex items-center gap-2">
+            <Folder className="w-4 h-4" />
+            Select Folder (Optional)
+          </label>
+          <Select
+            value={selectedFolderId || "root"}
+            onValueChange={(value) =>
+              setSelectedFolderId(value === "root" ? null : value)
+            }
+          >
+            <SelectTrigger className="rounded-xl">
+              <SelectValue placeholder="Choose a folder" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="root">
+                <div className="flex items-center gap-2">
+                  <Folder className="w-4 h-4" />
+                  <span>Root Directory</span>
+                </div>
+              </SelectItem>
+              {folders.map((folder) => (
+                <SelectItem key={folder.id} value={folder.id}>
+                  <div className="flex items-center gap-2">
+                    <Folder className="w-4 h-4" />
+                    <span>{folder.name}</span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Show current context indicator */}
+          {currentFolderId && !selectedFolderId && (
+            <p className="text-xs text-muted-foreground">
+              Currently in:{" "}
+              {folders.find((f) => f.id === currentFolderId)?.name || "Root"}
+            </p>
+          )}
+        </div>
+      )}
+
       {/* Drop Zone */}
       <div
         {...getRootProps()}
@@ -254,7 +334,7 @@ export default function UploadZone({ onUploadComplete }: UploadZoneProps) {
                   </span>
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  PDF, PNG, JPG, DOCX, XLSX — max 50MB per file
+                  PDF, PNG, JPG, DOCX, XLSX, MP4 — max 50MB per file
                 </p>
               </div>
             </>
@@ -281,111 +361,113 @@ export default function UploadZone({ onUploadComplete }: UploadZoneProps) {
           </div>
 
           {/* File Items */}
-          {files.map((item, index) => {
-            const fileInfo = FILE_ICONS[item.file.type] || {
-              icon: File,
-              color: "text-muted-foreground",
-              bg: "bg-muted",
-            };
-            const Icon = fileInfo.icon;
+          <div className="max-h-64 overflow-y-auto space-y-2">
+            {files.map((item, index) => {
+              const fileInfo = FILE_ICONS[item.file.type] || {
+                icon: File,
+                color: "text-muted-foreground",
+                bg: "bg-muted",
+              };
+              const Icon = fileInfo.icon;
 
-            return (
-              <div
-                key={index}
-                className="flex items-center gap-3 p-3 rounded-xl border border-border/60 bg-muted/20"
-              >
-                {/* File Icon */}
+              return (
                 <div
-                  className={cn(
-                    "w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0",
-                    fileInfo.bg,
-                  )}
+                  key={index}
+                  className="flex items-center gap-3 p-3 rounded-xl border border-border/60 bg-muted/20"
                 >
-                  <Icon className={cn("w-4 h-4", fileInfo.color)} />
-                </div>
-
-                {/* File Info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-2 mb-1">
-                    <p className="text-xs font-medium text-foreground truncate">
-                      {item.file.name}
-                    </p>
-                    <Badge
-                      variant="secondary"
-                      className={cn(
-                        "text-[10px] px-1.5 py-0 flex-shrink-0",
-                        item.status === "done" &&
-                          "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
-                        item.status === "error" &&
-                          "bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300",
-                        item.status === "uploading" &&
-                          "bg-violet-50 text-violet-700 dark:bg-violet-950 dark:text-violet-300",
-                        item.status === "pending" &&
-                          "bg-muted text-muted-foreground",
-                      )}
-                    >
-                      {item.status === "done" && "Done"}
-                      {item.status === "error" && "Error"}
-                      {item.status === "uploading" && "Uploading"}
-                      {item.status === "pending" && formatSize(item.file.size)}
-                    </Badge>
+                  {/* File Icon */}
+                  <div
+                    className={cn(
+                      "w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0",
+                      fileInfo.bg,
+                    )}
+                  >
+                    <Icon className={cn("w-4 h-4", fileInfo.color)} />
                   </div>
 
-                  {/* Progress Bar */}
-                  <Progress
-                    value={item.progress}
-                    className={cn(
-                      "h-1",
-                      item.status === "done" && "[&>div]:bg-emerald-500",
-                      item.status === "error" && "[&>div]:bg-red-500",
+                  {/* File Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <p className="text-xs font-medium text-foreground truncate">
+                        {item.file.name}
+                      </p>
+                      <Badge
+                        variant="secondary"
+                        className={cn(
+                          "text-[10px] px-1.5 py-0 flex-shrink-0",
+                          item.status === "done" &&
+                            "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
+                          item.status === "error" &&
+                            "bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300",
+                          item.status === "uploading" &&
+                            "bg-violet-50 text-violet-700 dark:bg-violet-950 dark:text-violet-300",
+                          item.status === "pending" &&
+                            "bg-muted text-muted-foreground",
+                        )}
+                      >
+                        {item.status === "done" && "Done"}
+                        {item.status === "error" && "Error"}
+                        {item.status === "uploading" &&
+                          `${Math.round(item.progress)}%`}
+                        {item.status === "pending" &&
+                          formatSize(item.file.size)}
+                      </Badge>
+                    </div>
+
+                    {/* Progress Bar */}
+                    {(item.status === "uploading" ||
+                      item.status === "pending") && (
+                      <Progress value={item.progress} className="h-1" />
                     )}
-                  />
 
-                  {/* Error message */}
-                  {item.status === "error" && item.error && (
-                    <p className="text-[10px] text-red-500 mt-1">
-                      {item.error}
-                    </p>
-                  )}
-                </div>
+                    {/* Error message */}
+                    {item.status === "error" && item.error && (
+                      <p className="text-[10px] text-red-500 mt-1">
+                        {item.error}
+                      </p>
+                    )}
+                  </div>
 
-                {/* Status Icon / Remove */}
-                <div className="flex-shrink-0">
-                  {item.status === "done" && (
-                    <CheckCircle className="w-4 h-4 text-emerald-500" />
-                  )}
-                  {item.status === "error" && (
-                    <XCircle className="w-4 h-4 text-red-500" />
-                  )}
-                  {item.status === "pending" && (
-                    <button onClick={() => removeFile(index)}>
-                      <X className="w-4 h-4 text-muted-foreground hover:text-foreground transition-colors" />
-                    </button>
-                  )}
-                  {item.status === "uploading" && (
-                    <Cloud className="w-4 h-4 text-violet-500 animate-pulse" />
-                  )}
+                  {/* Status Icon / Remove */}
+                  <div className="flex-shrink-0">
+                    {item.status === "done" && (
+                      <CheckCircle className="w-4 h-4 text-emerald-500" />
+                    )}
+                    {item.status === "error" && (
+                      <XCircle className="w-4 h-4 text-red-500" />
+                    )}
+                    {item.status === "pending" && (
+                      <button onClick={() => removeFile(index)}>
+                        <X className="w-4 h-4 text-muted-foreground hover:text-foreground transition-colors" />
+                      </button>
+                    )}
+                    {item.status === "uploading" && (
+                      <Cloud className="w-4 h-4 text-violet-500 animate-pulse" />
+                    )}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
 
           {/* Upload Button */}
           {pendingCount > 0 && (
             <Button
               onClick={uploadFiles}
               disabled={uploading}
-              className="w-full bg-violet-600 hover:bg-violet-700 text-white rounded-xl mt-1"
+              className="w-full bg-violet-600 hover:bg-violet-700 text-white rounded-xl mt-2"
             >
               {uploading ? (
                 <>
                   <Cloud className="w-4 h-4 mr-2 animate-pulse" />
-                  Uploading...
+                  Uploading {pendingCount} file(s)...
                 </>
               ) : (
                 <>
                   <UploadCloud className="w-4 h-4 mr-2" />
                   Upload {pendingCount} file{pendingCount > 1 ? "s" : ""}
+                  {selectedFolderId &&
+                    ` to ${folders.find((f) => f.id === selectedFolderId)?.name || "Folder"}`}
                 </>
               )}
             </Button>
