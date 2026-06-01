@@ -8,6 +8,7 @@ interface Document {
   storage_path: string;
   created_at: string;
 }
+
 export const handleDownload = async (doc: Document) => {
   debugger;
   const { data } = await supabase.storage
