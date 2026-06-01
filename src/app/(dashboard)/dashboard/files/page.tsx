@@ -163,7 +163,7 @@ function FileUploadModal({
     const fileName = `${Date.now()}_${Math.random()
       .toString(36)
       .substring(7)}.${fileExt}`;
-    const filePath = `${user.id}/${Date.now()}_${file.name}`;
+    const filePath = `${selectedFolderId || ""}/${Date.now()}_${fileName}`;
 
     try {
       // Upload to storage
