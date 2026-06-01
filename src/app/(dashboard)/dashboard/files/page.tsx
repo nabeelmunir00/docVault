@@ -10,8 +10,9 @@ import { Badge } from "@/components/ui/badge";
 import DeleteModal from "@/components/DeleteModal";
 import CreateFolderModal from "@/components/CreateFolderModal";
 import FilePreviewModal from "@/components/FilePreviewModal";
+import ShareModal from "@/components/ShareModal";
 import { handleDownload } from "@/utils/handleDownload";
-import { Eye, MoreVertical, Upload } from "lucide-react";
+import { Eye, MoreVertical, Upload, Share2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -213,6 +214,12 @@ export default function FilesPage() {
     null,
   );
 
+  // Share states
+  const [shareModal, setShareModal] = useState(false);
+  const [selectedShareDoc, setSelectedShareDoc] = useState<Document | null>(
+    null,
+  );
+
   // Fetch folders
   const fetchFolders = async () => {
     if (!user) return;
@@ -387,6 +394,12 @@ export default function FilesPage() {
   const openPreview = (doc: Document) => {
     setSelectedPreviewDoc(doc);
     setPreviewModal(true);
+  };
+
+  // Share
+  const openShare = (doc: Document) => {
+    setSelectedShareDoc(doc);
+    setShareModal(true);
   };
 
   if (!user) {
@@ -653,6 +666,14 @@ export default function FilesPage() {
                         <Button
                           variant="outline"
                           size="sm"
+                          onClick={() => openShare(doc)}
+                          className="h-7 w-7 p-0 rounded-lg border-border/60 hover:text-violet-500"
+                        >
+                          <Share2 className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() => openPreview(doc)}
                           className="h-7 w-7 p-0 rounded-lg border-border/60"
                         >
@@ -745,6 +766,14 @@ export default function FilesPage() {
                         <Button
                           variant="ghost"
                           size="icon"
+                          onClick={() => openShare(doc)}
+                          className="w-7 h-7 rounded-lg hover:text-violet-600"
+                        >
+                          <Share2 className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           onClick={() => openPreview(doc)}
                           className="w-7 h-7 rounded-lg hover:text-violet-600"
                         >
@@ -783,6 +812,12 @@ export default function FilesPage() {
                               className="cursor-pointer"
                             >
                               <Download className="w-4 h-4 mr-2" /> Download
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => openShare(doc)}
+                              className="cursor-pointer"
+                            >
+                              <Share2 className="w-4 h-4 mr-2" /> Share
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => openPreview(doc)}
@@ -855,6 +890,17 @@ export default function FilesPage() {
           setSelectedPreviewDoc(null);
         }}
         document={selectedPreviewDoc}
+      />
+
+      {/* Share Modal */}
+      <ShareModal
+        open={shareModal}
+        onClose={() => {
+          setShareModal(false);
+          setSelectedShareDoc(null);
+        }}
+        document={selectedShareDoc}
+        userId={user?.id || ""}
       />
 
       {/* File Upload Modal */}
