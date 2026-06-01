@@ -26,6 +26,7 @@ import {
   Trash2,
   Shield,
   CheckCircle,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -80,39 +81,78 @@ export default function SettingsPage() {
   const [deleteModal, setDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Delete all files
+  // Delete all files AND folders
   const handleDeleteAllFiles = async () => {
     if (!user) return;
     setIsDeleting(true);
 
     try {
+      // Step 1: Get all folders
+      const { data: folders } = await supabase
+        .from("folders")
+        .select("id")
+        .eq("user_id", user.id);
+
+      // Step 2: Get all documents with their storage paths
       const { data: docs } = await supabase
         .from("documents")
         .select("storage_path")
         .eq("user_id", user.id);
 
+      // Step 3: Delete files from Supabase Storage
       if (docs && docs.length > 0) {
-        await supabase.storage
-          .from("documents")
-          .remove(docs.map((d) => d.storage_path));
+        const storagePaths = docs.map((d) => d.storage_path);
 
-        await supabase.from("documents").delete().eq("user_id", user.id);
+        // Delete in batches to avoid rate limiting
+        const batchSize = 100;
+        for (let i = 0; i < storagePaths.length; i += batchSize) {
+          const batch = storagePaths.slice(i, i + batchSize);
+          const { error: storageError } = await supabase.storage
+            .from("documents")
+            .remove(batch);
+
+          if (storageError) {
+            console.error("Storage deletion error:", storageError);
+          }
+        }
       }
 
-      toast.success("All files deleted!", {
-        description: "Your storage has been cleared successfully.",
+      // Step 4: Delete all documents from database
+      const { error: docsError } = await supabase
+        .from("documents")
+        .delete()
+        .eq("user_id", user.id);
+
+      if (docsError) throw docsError;
+
+      // Step 5: Delete all folders from database
+      if (folders && folders.length > 0) {
+        const { error: foldersError } = await supabase
+          .from("folders")
+          .delete()
+          .eq("user_id", user.id);
+
+        if (foldersError) throw foldersError;
+      }
+
+      toast.success("All data deleted successfully!", {
+        description: `${docs?.length || 0} files and ${folders?.length || 0} folders have been permanently deleted.`,
       });
 
+      // Reset storage counter
       setUsedBytes(0);
       setDeleteModal(false);
-      router.refresh();
-    } catch {
-      toast.error("Failed to delete files!", {
-        description: "Something went wrong. Try again.",
-      });
-    }
 
-    setIsDeleting(false);
+      // Refresh the page to update all components
+      router.refresh();
+    } catch (error) {
+      console.error("Delete all error:", error);
+      toast.error("Failed to delete all data!", {
+        description: "Something went wrong. Please try again.",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const themeOptions = [
@@ -312,10 +352,10 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between px-6 py-4 border-b border-red-100 dark:border-red-900/50">
               <div>
                 <p className="text-sm font-medium text-foreground">
-                  Delete All Files
+                  Delete All Data
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Permanently delete all your uploaded files
+                  Permanently delete all your files and folders
                 </p>
               </div>
               <Button
@@ -323,8 +363,13 @@ export default function SettingsPage() {
                 size="sm"
                 onClick={() => setDeleteModal(true)}
                 className="border-red-200 text-red-500 hover:bg-red-50 hover:text-red-600 dark:border-red-900 dark:hover:bg-red-950 rounded-lg"
+                disabled={isDeleting}
               >
-                <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+                {isDeleting ? (
+                  <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                ) : (
+                  <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+                )}
                 Delete All
               </Button>
             </div>
@@ -353,13 +398,13 @@ export default function SettingsPage() {
         </Card>
       </div>
 
-      {/* Delete All Files Modal */}
+      {/* Delete All Data Modal */}
       <DeleteModal
         open={deleteModal}
         onClose={() => setDeleteModal(false)}
         onConfirm={handleDeleteAllFiles}
-        fileName="All your files"
-        fileType="application/pdf"
+        fileName="all your files and folders"
+        fileType="application/octet-stream"
         isDeleting={isDeleting}
       />
 
