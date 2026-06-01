@@ -171,6 +171,7 @@ export default function ShareModal({
                 id="password-protection"
                 checked={hasPassword}
                 onCheckedChange={setHasPassword}
+                className="data-[state=checked]:bg-violet-600"
               />
             </div>
 
@@ -183,6 +184,7 @@ export default function ShareModal({
                   placeholder="Enter password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  className="border-violet-600"
                 />
               </div>
             )}
@@ -206,7 +208,7 @@ export default function ShareModal({
                     variant={expiresIn === option.value ? "default" : "outline"}
                     size="sm"
                     onClick={() => setExpiresIn(option.value as any)}
-                    className="text-xs"
+                    className="w-full bg-violet-600 hover:bg-violet-700 text-white rounded-xl mt-2"
                   >
                     {option.label}
                   </Button>
@@ -239,6 +241,7 @@ export default function ShareModal({
                     e.target.value ? parseInt(e.target.value) : null,
                   )
                 }
+                className="border-violet-600"
               />
               <p className="text-xs text-muted-foreground">
                 Leave empty for unlimited downloads
@@ -248,7 +251,7 @@ export default function ShareModal({
             <Button
               onClick={generateShareLink}
               disabled={isLoading || (hasPassword && !password)}
-              className="w-full gap-2"
+              className="w-full bg-violet-600 hover:bg-violet-700 text-white rounded-xl mt-2"
             >
               {isLoading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />

@@ -266,7 +266,10 @@ export default function SharePage() {
             </p>
           </div>
 
-          <Button onClick={handleDownloadClick} className="w-full gap-2">
+          <Button
+            onClick={handleDownloadClick}
+            className="w-full gap-2 bg-violet-600 hover:bg-violet-700 text-white rounded-xl"
+          >
             <Download className="w-4 h-4" />
             Download File
           </Button>
