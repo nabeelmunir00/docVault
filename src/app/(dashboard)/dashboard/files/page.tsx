@@ -11,7 +11,7 @@ import DeleteModal from "@/components/DeleteModal";
 import CreateFolderModal from "@/components/CreateFolderModal";
 import FilePreviewModal from "@/components/FilePreviewModal";
 import { handleDownload } from "@/utils/handleDownload";
-import { Eye, MoreVertical } from "lucide-react";
+import { Eye, MoreVertical, Upload } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,6 +37,19 @@ import {
   Home,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Document {
   id: string;
@@ -46,6 +59,7 @@ interface Document {
   storage_path: string;
   created_at: string;
   folder_id: string | null;
+  public_url?: string;
 }
 
 interface FolderItem {
@@ -112,6 +126,195 @@ const formatDate = (date: string) => {
   });
 };
 
+// File Upload Modal Component
+function FileUploadModal({
+  open,
+  onClose,
+  onUploadComplete,
+  folders,
+  currentFolderId,
+  userId,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onUploadComplete: () => void;
+  folders: FolderItem[];
+  currentFolderId: string | null;
+  userId: string;
+}) {
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(
+    currentFolderId || null,
+  );
+  const [uploading, setUploading] = useState(false);
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setSelectedFile(e.target.files[0]);
+    }
+  };
+
+  const handleUpload = async () => {
+    if (!selectedFile || !userId) return;
+
+    setUploading(true);
+    const file = selectedFile;
+    const fileExt = file.name.split(".").pop();
+    const fileName = `${Date.now()}_${Math.random()
+      .toString(36)
+      .substring(7)}.${fileExt}`;
+    const filePath = `users/${userId}/${
+      selectedFolderId ? `folder_${selectedFolderId}/` : ""
+    }${fileName}`;
+
+    try {
+      // Upload to storage
+      const { error: uploadError } = await supabase.storage
+        .from("documents")
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from("documents")
+        .getPublicUrl(filePath);
+
+      // Save to database
+      const { error: dbError } = await supabase.from("documents").insert({
+        user_id: userId,
+        file_name: file.name,
+        file_type: file.type,
+        file_size: file.size,
+        storage_path: filePath,
+        public_url: urlData.publicUrl,
+        folder_id: selectedFolderId,
+      });
+
+      if (dbError) throw dbError;
+
+      toast.success("File uploaded successfully!", {
+        description: `${file.name} has been uploaded${
+          selectedFolderId ? " to folder" : ""
+        }.`,
+      });
+
+      onUploadComplete();
+      onClose();
+      setSelectedFile(null);
+      setSelectedFolderId(currentFolderId || null);
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast.error("Upload failed!", {
+        description: "There was an error uploading your file.",
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Upload File</DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          {/* Folder Selection */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">
+              Select Folder (Optional)
+            </label>
+            <Select
+              value={selectedFolderId || "root"}
+              onValueChange={(value) =>
+                setSelectedFolderId(value === "root" ? null : value)
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Choose a folder" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="root">
+                  <div className="flex items-center gap-2">
+                    <Folder className="w-4 h-4" />
+                    <span>Root Directory</span>
+                  </div>
+                </SelectItem>
+                {folders.map((folder) => (
+                  <SelectItem key={folder.id} value={folder.id}>
+                    <div className="flex items-center gap-2">
+                      <Folder className="w-4 h-4" />
+                      <span>{folder.name}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* File Selection */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Select File</label>
+            <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
+              <input
+                type="file"
+                onChange={handleFileSelect}
+                className="hidden"
+                id="file-upload-input"
+              />
+              <label
+                htmlFor="file-upload-input"
+                className="cursor-pointer flex flex-col items-center gap-2"
+              >
+                <Upload className="w-8 h-8 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">
+                  Click to select a file
+                </span>
+              </label>
+            </div>
+            {selectedFile && (
+              <div className="flex items-center justify-between bg-muted/30 rounded-lg p-2">
+                <span className="text-sm truncate flex-1">
+                  {selectedFile.name}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedFile(null)}
+                  className="h-6 w-6 p-0"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </Button>
+              </div>
+            )}
+          </div>
+
+          {/* Upload Button */}
+          <Button
+            onClick={handleUpload}
+            disabled={!selectedFile || uploading}
+            className="w-full"
+          >
+            {uploading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Uploading...
+              </>
+            ) : (
+              <>
+                <Upload className="w-4 h-4 mr-2" />
+                Upload File
+              </>
+            )}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function FilesPage() {
   const { user } = useUser();
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -121,6 +324,7 @@ export default function FilesPage() {
   const [search, setSearch] = useState("");
   const [deleting, setDeleting] = useState<string | null>(null);
   const [view, setView] = useState<"grid" | "list">("grid");
+  const [uploadModal, setUploadModal] = useState(false);
 
   // Folder states
   const [currentFolder, setCurrentFolder] = useState<FolderItem | null>(null);
@@ -174,8 +378,10 @@ export default function FilesPage() {
   };
 
   useEffect(() => {
-    fetchFolders();
-    fetchDocuments();
+    if (user) {
+      fetchFolders();
+      fetchDocuments();
+    }
   }, [user, currentFolder]);
 
   // Search filter
@@ -217,6 +423,23 @@ export default function FilesPage() {
 
   // Delete folder
   const handleDeleteFolder = async (folder: FolderItem) => {
+    // First, move all files in this folder to root or delete them
+    const { data: filesInFolder } = await supabase
+      .from("documents")
+      .select("id")
+      .eq("folder_id", folder.id);
+
+    if (filesInFolder && filesInFolder.length > 0) {
+      // Option 1: Move files to root
+      await supabase
+        .from("documents")
+        .update({ folder_id: null })
+        .eq("folder_id", folder.id);
+
+      toast.info(`Moved ${filesInFolder.length} file(s) to root directory`);
+    }
+
+    // Delete the folder
     const { error } = await supabase
       .from("folders")
       .delete()
@@ -227,7 +450,7 @@ export default function FilesPage() {
     } else {
       setFolders((prev) => prev.filter((f) => f.id !== folder.id));
       toast.success("Folder deleted!", {
-        description: `"${folder.name}" has been deleted.`,
+        description: `"${folder.name}" has been deleted. Files were moved to root.`,
       });
     }
   };
@@ -273,14 +496,39 @@ export default function FilesPage() {
     setPreviewModal(true);
   };
 
+  if (!user) {
+    return (
+      <div className="p-6 max-w-6xl mx-auto">
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-20 gap-3">
+            <p className="text-sm font-medium text-foreground">
+              Please sign in to view your files
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 max-w-6xl mx-auto">
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-foreground">My Files</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          All your uploaded documents in one place
-        </p>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-foreground">My Files</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            All your uploaded documents in one place
+          </p>
+        </div>
+
+        {/* Upload Button */}
+        <Button
+          onClick={() => setUploadModal(true)}
+          className="rounded-xl gap-2"
+        >
+          <Upload className="w-4 h-4" />
+          Upload File
+        </Button>
       </div>
 
       {/* Breadcrumb */}
@@ -321,7 +569,7 @@ export default function FilesPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          {/* New Folder — sirf root mein */}
+          {/* New Folder — only in root */}
           {!currentFolder && (
             <Button
               variant="outline"
@@ -375,7 +623,7 @@ export default function FilesPage() {
 
       {!loading && (
         <>
-          {/* Folders — sirf root mein */}
+          {/* Folders — only in root */}
           {!currentFolder && folders.length > 0 && (
             <div className="mb-6">
               <p className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-widest">
@@ -391,6 +639,9 @@ export default function FilesPage() {
                     <FolderOpen className="w-8 h-8 text-violet-500" />
                     <p className="text-xs font-medium text-foreground truncate">
                       {folder.name}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {formatDate(folder.created_at)}
                     </p>
                     {/* Delete folder */}
                     <button
@@ -428,8 +679,41 @@ export default function FilesPage() {
                 <p className="text-xs text-muted-foreground">
                   {search
                     ? "Try a different search term"
-                    : "Upload your first file to get started"}
+                    : currentFolder
+                      ? "Upload files to this folder using the upload button"
+                      : "Create a folder or upload your first file to get started"}
                 </p>
+                {!search && !currentFolder && (
+                  <div className="flex gap-2 mt-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCreateFolderModal(true)}
+                      className="gap-1"
+                    >
+                      <FolderPlus className="w-3 h-3" />
+                      Create Folder
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => setUploadModal(true)}
+                      className="gap-1"
+                    >
+                      <Upload className="w-3 h-3" />
+                      Upload File
+                    </Button>
+                  </div>
+                )}
+                {!search && currentFolder && (
+                  <Button
+                    size="sm"
+                    onClick={() => setUploadModal(true)}
+                    className="gap-1 mt-2"
+                  >
+                    <Upload className="w-3 h-3" />
+                    Upload to this folder
+                  </Button>
+                )}
               </CardContent>
             </Card>
           )}
@@ -664,6 +948,19 @@ export default function FilesPage() {
           setSelectedPreviewDoc(null);
         }}
         document={selectedPreviewDoc}
+      />
+
+      {/* File Upload Modal */}
+      <FileUploadModal
+        open={uploadModal}
+        onClose={() => setUploadModal(false)}
+        onUploadComplete={() => {
+          fetchDocuments();
+          fetchFolders();
+        }}
+        folders={folders}
+        currentFolderId={currentFolder?.id || null}
+        userId={user.id}
       />
     </div>
   );
